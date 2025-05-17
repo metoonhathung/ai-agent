@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import json
 from dotenv import load_dotenv, find_dotenv
 
 _ = load_dotenv(find_dotenv())
@@ -20,7 +21,7 @@ def chat():
     headers = { "Content-Type": "application/json" }
     data = { "room_id": room_id, "text": text }
     response = requests.post(url, json=data, headers=headers)
-    content = response.json()["messages"][-1]["content"]
+    content = response.json()
     return content
 
 def main():
@@ -33,7 +34,7 @@ def main():
     st.chat_input("Ask anything", key="text", on_submit=chat)
     messages = history()
     for message in messages:
-        st.chat_message(message["type"]).write(message["content"])
+        st.chat_message(message["type"]).write(message["content"] if "tool_calls" not in message["additional_kwargs"] else json.dumps(message['additional_kwargs']['tool_calls']))
 
 if __name__ == "__main__":
     main()

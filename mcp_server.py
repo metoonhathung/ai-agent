@@ -11,5 +11,5 @@ async def search_online(query: str) -> str:
     return search.run(query)
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
-    # mcp.run(transport="streamable-http")
+    # mcp.run(transport="stdio")
+    mcp.run(transport="streamable-http")
