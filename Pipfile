@@ -12,6 +12,8 @@ langchain = {extras = ["openai"], version = "*"}
 langchain-community = "*"
 langgraph = "*"
 duckduckgo-search = "*"
+mcp = "*"
+langchain-mcp-adapters = "*"
 
 [dev-packages]
 
