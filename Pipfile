@@ -6,6 +6,11 @@ name = "pypi"
 [packages]
 fastapi = "*"
 uvicorn = "*"
+python-dotenv = "*"
+langchain = {extras = ["openai"], version = "*"}
+langchain-community = "*"
+langgraph = "*"
+duckduckgo-search = "*"
 
 [dev-packages]
 
