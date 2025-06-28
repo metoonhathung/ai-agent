@@ -31,7 +31,7 @@ agent = None
 async def startup_event():
     global cards, agent
     urls = [WORKER_URL]
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         tasks = [A2ACardResolver(client, url).get_agent_card() for url in urls]
         cards = await asyncio.gather(*tasks)
 
@@ -45,18 +45,17 @@ async def startup_event():
     async def execute_agent(tool_name: str, input: str) -> str:
         """Call an agent with the given input."""
         card = next((card for card in cards if card.name == tool_name), None)
-        async with httpx.AsyncClient() as httpx_client:
-            client = await A2AClient.get_client_from_agent_card_url(
-                httpx_client, card.url
-            )
+        async with httpx.AsyncClient(timeout=30) as httpx_client:
+            client = A2AClient(httpx_client, card, card.url)
+            message_id = str(uuid4())
             payload: dict[str, Any] = {
                 'message': {
                     'role': 'user',
                     'parts': [{'type': 'text', 'text': input}],
-                    'messageId': uuid4().hex,
+                    'messageId': message_id,
                 },
             }
-            request = SendMessageRequest(params=MessageSendParams(**payload))
+            request = SendMessageRequest(id=message_id, params=MessageSendParams(**payload))
             response: SendMessageResponse = await client.send_message(request)
             result = response.root.result.artifacts[0].parts[0].root.text if hasattr(response, 'root') else ""
             return result

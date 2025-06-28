@@ -1,27 +1,24 @@
-import asyncio
-from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.prebuilt import create_react_agent
+from google.genai import types
+from google.adk.agents import LlmAgent
+from google.adk.models.lite_llm import LiteLlm
+from google.adk.sessions import InMemorySessionService
+from google.adk.runners import Runner
+from google.adk.tools.mcp_tool.mcp_toolset import (
+    MCPToolset,
+    StreamableHTTPConnectionParams,
+)
 
 from typing_extensions import override
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events.event_queue import EventQueue
-from a2a.types import (
-    TaskArtifactUpdateEvent,
-    TaskState,
-    TaskStatus,
-    TaskStatusUpdateEvent,
-)
-from a2a.utils import new_task, new_text_artifact
+from a2a.utils import new_text_artifact, completed_task
 
 import click
 from dotenv import load_dotenv
-from a2a.server.apps import A2AStarletteApplication
+from a2a.server.apps.jsonrpc import A2AFastAPIApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import (
-    AgentAuthentication,
     AgentCapabilities,
     AgentCard,
     AgentSkill,
@@ -34,43 +31,38 @@ WORKER AGENT
 """
 
 MCP_URL = "http://localhost:8000/mcp"
-checkpointer = InMemorySaver()
-
-def get_mcp_tools() -> list:
-    client = MultiServerMCPClient(
-        {
-            "search": {
-                # "command": "python",
-                # "args": ["mcp_server.py"],
-                # "transport": "stdio",
-                "url": MCP_URL,
-                "transport": "streamable_http",
-            }
-        }
-    )
-
-    return asyncio.run(client.get_tools())
+WORKER_URL = "http://localhost:10000"
 
 class WorkerAgent:
-    SYSTEM_INSTRUCTION = "You are a world class web searcher assistant."
-
     def __init__(self):
-        self.tools = get_mcp_tools()
-        self.model = ChatOpenAI(model="gpt-4o")
-        self.graph = create_react_agent(
-            self.model,
-            tools=self.tools,
-            checkpointer=checkpointer,
-            prompt=self.SYSTEM_INSTRUCTION,
+        self.agent = LlmAgent(
+            model=LiteLlm(model="openai/gpt-4o"),
+            name="worker_agent",
+            description="You are a world class web searcher assistant.",
+            instruction="""Use tool search_online to search the web for information.""",
+            tools=[MCPToolset(connection_params=StreamableHTTPConnectionParams(url=MCP_URL))],
+        )
+        self.runner = Runner(
+            app_name="worker_agent",
+            agent=self.agent,
+            session_service=InMemorySessionService(),
         )
 
-    async def invoke(self, query, sessionId) -> str:
-        config = {"configurable": {"thread_id": sessionId}}
-        response = await self.graph.ainvoke({"messages": [("user", query)]}, config)
+    async def invoke(self, query, session_id) -> str:
+        session = await self.runner.session_service.get_session(app_name="worker_agent", user_id="self", session_id=session_id)
+        if session is None:
+            session = await self.runner.session_service.create_session(app_name="worker_agent", user_id="self", session_id=session_id)
+        content = types.Content(role='user', parts=[types.Part(text=query)])
+        final_response_text = "Agent did not produce a final response."
+        async for event in self.runner.run_async(user_id="self", session_id=session_id, new_message=content):
+            if event.is_final_response():
+                if event.content and event.content.parts:
+                    final_response_text = event.content.parts[0].text
+                break
         return {
             "is_task_complete": True,
             "require_user_input": False,
-            "content": response["messages"][-1].content,
+            "content": final_response_text,
         }
     
 """
@@ -90,38 +82,15 @@ class WorkerAgentExecutor(AgentExecutor):
         event_queue: EventQueue,
     ) -> None:
         query = context.get_user_input()
-        task = context.current_task
-
-        if not context.message:
-            raise Exception('No message provided')
-
-        if not task:
-            task = new_task(context.message)
-            event_queue.enqueue_event(task)
-
-        event = await self.agent.invoke(query, task.contextId)
-        if event['is_task_complete']:
-            event_queue.enqueue_event(
-                TaskArtifactUpdateEvent(
-                    append=False,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                    lastChunk=True,
-                    artifact=new_text_artifact(
-                        name='current_result',
-                        description='Result of request to agent.',
-                        text=event['content'],
-                    ),
-                )
+        event = await self.agent.invoke(query, context.context_id)
+        await event_queue.enqueue_event(
+            completed_task(
+                context.task_id,
+                context.context_id,
+                [new_text_artifact(name='current_result', description='Result of request to agent.', text=event['content'])],
+                [context.message],
             )
-            event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(state=TaskState.completed),
-                    final=True,
-                    contextId=task.contextId,
-                    taskId=task.id,
-                )
-            )
+        )
 
     @override
     async def cancel(
@@ -142,7 +111,7 @@ def main(host: str, port: int):
         agent_executor=WorkerAgentExecutor(),
         task_store=InMemoryTaskStore(),
     )
-    server = A2AStarletteApplication(
+    server = A2AFastAPIApplication(
         agent_card=get_agent_card(host, port), http_handler=request_handler
     )
     import uvicorn
@@ -161,13 +130,12 @@ def get_agent_card(host: str, port: int):
     return AgentCard(
         name='Worker Agent',
         description='Helper agent for searching online',
-        url=f'http://{host}:{port}/',
+        url=WORKER_URL,
         version='1.0.0',
         defaultInputModes=['text', 'text/plain'],
         defaultOutputModes=['text', 'text/plain'],
         capabilities=capabilities,
         skills=[skill],
-        authentication=AgentAuthentication(schemes=['public']),
     )
 
 if __name__ == '__main__':

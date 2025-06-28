@@ -1,7 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from langchain_community.tools import DuckDuckGoSearchRun
 
-mcp = FastMCP("Search")
+mcp = FastMCP(name="MCP Server", description="Search online", host="0.0.0.0", port=8000)
 
 search = DuckDuckGoSearchRun()
 

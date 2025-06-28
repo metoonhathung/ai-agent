@@ -8,13 +8,16 @@ fastapi = "*"
 uvicorn = "*"
 streamlit = "*"
 python-dotenv = "*"
-langchain = {extras = ["openai"], version = "*"}
+langchain = "*"
+langchain-openai = "*"
 langchain-community = "*"
 langgraph = "*"
 duckduckgo-search = "*"
 mcp = "*"
 langchain-mcp-adapters = "*"
 a2a-sdk = "*"
+google-adk = "*"
+litellm = "*"
 
 [dev-packages]
 
