@@ -18,8 +18,11 @@ langchain-mcp-adapters = "*"
 a2a-sdk = "*"
 google-adk = "*"
 litellm = "*"
+crewai = {extras = ["tools"], version = "*"}
+crewai-tools = {extras = ["mcp"], version = "*"}
+supabase = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.13"
+python_version = "3.11"

@@ -14,7 +14,7 @@ from a2a.server.events.event_queue import EventQueue
 from a2a.utils import new_text_artifact, completed_task
 
 import click
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from a2a.server.apps.jsonrpc import A2AFastAPIApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
@@ -24,34 +24,34 @@ from a2a.types import (
     AgentSkill,
 )
 
-load_dotenv()
+_ = load_dotenv(find_dotenv())
 
 """
-WORKER AGENT
+RESEARCHER AGENT
 """
 
-MCP_URL = "http://localhost:8000/mcp"
-WORKER_URL = "http://localhost:10000"
+RESEARCHER_MCP_URL = "http://localhost:8000/mcp"
+RESEARCHER_SERVER_URL = "http://localhost:10000"
 
-class WorkerAgent:
+class ResearcherAgent:
     def __init__(self):
         self.agent = LlmAgent(
             model=LiteLlm(model="openai/gpt-4o"),
-            name="worker_agent",
-            description="You are a world class web searcher assistant.",
+            name="researcher_agent",
+            description="You are a world class web researcher.",
             instruction="""Use tool search_online to search the web for information.""",
-            tools=[MCPToolset(connection_params=StreamableHTTPConnectionParams(url=MCP_URL))],
+            tools=[MCPToolset(connection_params=StreamableHTTPConnectionParams(url=RESEARCHER_MCP_URL))],
         )
         self.runner = Runner(
-            app_name="worker_agent",
+            app_name="researcher_agent",
             agent=self.agent,
             session_service=InMemorySessionService(),
         )
 
     async def invoke(self, query, session_id) -> str:
-        session = await self.runner.session_service.get_session(app_name="worker_agent", user_id="self", session_id=session_id)
+        session = await self.runner.session_service.get_session(app_name="researcher_agent", user_id="self", session_id=session_id)
         if session is None:
-            session = await self.runner.session_service.create_session(app_name="worker_agent", user_id="self", session_id=session_id)
+            session = await self.runner.session_service.create_session(app_name="researcher_agent", user_id="self", session_id=session_id)
         content = types.Content(role='user', parts=[types.Part(text=query)])
         final_response_text = "Agent did not produce a final response."
         async for event in self.runner.run_async(user_id="self", session_id=session_id, new_message=content):
@@ -59,6 +59,7 @@ class WorkerAgent:
                 if event.content and event.content.parts:
                     final_response_text = event.content.parts[0].text
                 break
+        print(f"Request: {query}, Response: {final_response_text}")
         return {
             "is_task_complete": True,
             "require_user_input": False,
@@ -66,14 +67,14 @@ class WorkerAgent:
         }
     
 """
-WORKER AGENT EXECUTOR
+RESEARCHER AGENT EXECUTOR
 """
 
-class WorkerAgentExecutor(AgentExecutor):
-    """Worker AgentExecutor Example."""
+class ResearcherAgentExecutor(AgentExecutor):
+    """Researcher AgentExecutor Example."""
 
     def __init__(self):
-        self.agent = WorkerAgent()
+        self.agent = ResearcherAgent()
 
     @override
     async def execute(
@@ -100,7 +101,7 @@ class WorkerAgentExecutor(AgentExecutor):
 
 
 """
-WORKER SERVER
+RESEARCHER SERVER
 """
 
 @click.command()
@@ -108,7 +109,7 @@ WORKER SERVER
 @click.option('--port', 'port', default=10000)
 def main(host: str, port: int):
     request_handler = DefaultRequestHandler(
-        agent_executor=WorkerAgentExecutor(),
+        agent_executor=ResearcherAgentExecutor(),
         task_store=InMemoryTaskStore(),
     )
     server = A2AFastAPIApplication(
@@ -118,7 +119,7 @@ def main(host: str, port: int):
     uvicorn.run(server.build(), host=host, port=port)
 
 def get_agent_card(host: str, port: int):
-    """Returns the Agent Card for the Worker Agent."""
+    """Returns the Agent Card for the Researcher Agent."""
     capabilities = AgentCapabilities(streaming=False, pushNotifications=False)
     skill = AgentSkill(
         id='search_online',
@@ -128,9 +129,9 @@ def get_agent_card(host: str, port: int):
         examples=['What are the latest news today?'],
     )
     return AgentCard(
-        name='Worker Agent',
+        name='Researcher Agent',
         description='Helper agent for searching online',
-        url=WORKER_URL,
+        url=RESEARCHER_SERVER_URL,
         version='1.0.0',
         defaultInputModes=['text', 'text/plain'],
         defaultOutputModes=['text', 'text/plain'],
