@@ -1,0 +1,92 @@
+services:
+  researcher_mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.researcher_mcp
+    container_name: researcher_mcp
+    ports:
+      - "8000:8000"
+    env_file: ".env"
+      
+  researcher_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.researcher_server
+    container_name: researcher_server
+    depends_on:
+      mcp_sleep:
+        condition: service_completed_successfully
+    ports:
+      - "10000:10000"
+    env_file: ".env"
+
+  creator_mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.creator_mcp
+    container_name: creator_mcp
+    ports:
+      - "8001:8001"
+    env_file: ".env"
+
+  creator_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.creator_server
+    container_name: creator_server
+    depends_on:
+      mcp_sleep:
+        condition: service_completed_successfully
+    ports:
+      - "10001:10001"
+    env_file: ".env"
+
+  manager_mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.manager_mcp
+    container_name: manager_mcp
+    ports:
+      - "8080:8080"
+    env_file: ".env"
+
+  manager_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.manager_server
+    container_name: manager_server
+    depends_on:
+      a2a_sleep:
+        condition: service_completed_successfully
+    ports:
+      - "80:80"
+    env_file: ".env"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: web
+    ports:
+      - "8501:8501"
+    env_file: ".env"
+
+  mcp_sleep:
+    image: busybox
+    command: ["sleep", "15"]
+    depends_on:
+      researcher_mcp:
+        condition: service_started
+      creator_mcp:
+        condition: service_started
+      manager_mcp:
+        condition: service_started
+
+  a2a_sleep:
+    image: busybox
+    command: ["sleep", "30"]
+    depends_on:
+      researcher_server:
+        condition: service_started
+      creator_server:
+        condition: service_started

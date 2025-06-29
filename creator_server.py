@@ -7,6 +7,7 @@ from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events.event_queue import EventQueue
 from a2a.utils import new_text_artifact, completed_task
 
+import os
 import click
 from dotenv import load_dotenv, find_dotenv
 from a2a.server.apps.jsonrpc import A2AFastAPIApplication
@@ -24,13 +25,10 @@ _ = load_dotenv(find_dotenv())
 CREATOR AGENT
 """
 
-CREATOR_MCP_URL = "http://localhost:8001/mcp"
-CREATOR_SERVER_URL = "http://localhost:10001"
-
 class CreatorAgent:
     def __init__(self):
         server_params = {
-            "url": CREATOR_MCP_URL,
+            "url": os.environ['CREATOR_MCP_URL'],
             "transport": "streamable-http"
         }
         self.model = LLM(model="gpt-4o")
@@ -132,7 +130,7 @@ def get_agent_card(host: str, port: int):
     return AgentCard(
         name='Creator Agent',
         description='Helper agent for creating images',
-        url=CREATOR_SERVER_URL,
+        url=os.environ['CREATOR_SERVER_URL'],
         version='1.0.0',
         defaultInputModes=['text', 'text/plain'],
         defaultOutputModes=['text', 'text/plain'],

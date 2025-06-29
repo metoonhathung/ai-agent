@@ -1,13 +1,13 @@
 import streamlit as st
 import requests
 from dotenv import load_dotenv, find_dotenv
+import os
 
 _ = load_dotenv(find_dotenv())
-MANAGER_SERVER_URL = "http://localhost"
 
 def history():
     room_id = st.session_state["room_id"]
-    url = f"{MANAGER_SERVER_URL}/chat/{room_id}"
+    url = f"{os.environ['MANAGER_SERVER_URL']}/chat/{room_id}"
     response = requests.get(url)
     messages = response.json()["messages"]
     return messages
@@ -16,7 +16,7 @@ def chat():
     room_id = st.session_state["room_id"]
     text = st.session_state["text"]
     if not text: return
-    url = f"{MANAGER_SERVER_URL}/chat/{room_id}"
+    url = f"{os.environ['MANAGER_SERVER_URL']}/chat/{room_id}"
     headers = { "Content-Type": "application/json" }
     data = { "room_id": room_id, "text": text }
     response = requests.post(url, json=data, headers=headers)

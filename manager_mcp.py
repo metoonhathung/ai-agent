@@ -1,6 +1,7 @@
 from mcp.server.fastmcp import FastMCP
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+import os
 import asyncio
 import httpx
 from typing import Any
@@ -14,9 +15,7 @@ from a2a.types import (
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[dict]:
-    RESEARCHER_SERVER_URL = "http://localhost:10000"
-    CREATOR_SERVER_URL = "http://localhost:10001"
-    urls = [RESEARCHER_SERVER_URL, CREATOR_SERVER_URL]
+    urls = [os.environ['RESEARCHER_SERVER_URL'], os.environ['CREATOR_SERVER_URL']]
     async with httpx.AsyncClient(timeout=30) as client:
         tasks = [A2ACardResolver(client, url).get_agent_card() for url in urls]
         cards = await asyncio.gather(*tasks)

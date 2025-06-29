@@ -13,6 +13,7 @@ from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events.event_queue import EventQueue
 from a2a.utils import new_text_artifact, completed_task
 
+import os
 import click
 from dotenv import load_dotenv, find_dotenv
 from a2a.server.apps.jsonrpc import A2AFastAPIApplication
@@ -30,9 +31,6 @@ _ = load_dotenv(find_dotenv())
 RESEARCHER AGENT
 """
 
-RESEARCHER_MCP_URL = "http://localhost:8000/mcp"
-RESEARCHER_SERVER_URL = "http://localhost:10000"
-
 class ResearcherAgent:
     def __init__(self):
         self.agent = LlmAgent(
@@ -40,7 +38,7 @@ class ResearcherAgent:
             name="researcher_agent",
             description="You are a world class web researcher.",
             instruction="""Use tool search_online to search the web for information.""",
-            tools=[MCPToolset(connection_params=StreamableHTTPConnectionParams(url=RESEARCHER_MCP_URL))],
+            tools=[MCPToolset(connection_params=StreamableHTTPConnectionParams(url=os.environ['RESEARCHER_MCP_URL']))],
         )
         self.runner = Runner(
             app_name="researcher_agent",
@@ -131,7 +129,7 @@ def get_agent_card(host: str, port: int):
     return AgentCard(
         name='Researcher Agent',
         description='Helper agent for searching online',
-        url=RESEARCHER_SERVER_URL,
+        url=os.environ['RESEARCHER_SERVER_URL'],
         version='1.0.0',
         defaultInputModes=['text', 'text/plain'],
         defaultOutputModes=['text', 'text/plain'],

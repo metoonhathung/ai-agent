@@ -5,14 +5,13 @@ from pydantic import BaseModel
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_mcp_adapters.client import MultiServerMCPClient
+import os
 
 _ = load_dotenv(find_dotenv())
 
 app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
-
-MANAGER_MCP_URL = "http://localhost:8080/mcp"
 
 agent = None
 
@@ -22,7 +21,7 @@ async def startup_event():
     client = MultiServerMCPClient(
         {
             "search": {
-                "url": MANAGER_MCP_URL,
+                "url": os.environ['MANAGER_MCP_URL'],
                 "transport": "streamable_http",
             }
         }
