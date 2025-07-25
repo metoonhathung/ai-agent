@@ -1,18 +1,19 @@
 # AI Agent
 
-[Demo](https://web-e9wb.onrender.com/)
+[Demo](https://multi-agent-ai.streamlit.app/)
 
-Description: A multi-agent AI chatbot application capable of searching online and creating images.
+Description: A multi-agent AI chatbot application capable of searching online and creating/editing images.
 
-Technologies: Streamlit, FastAPI, LangGraph, crewAI, ADK, A2A, MCP
+Technologies: Streamlit, FastAPI, Supabase, LangGraph, crewAI, ADK, A2A, MCP
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  A[web_ui] --> B["`manager_api
+  A[webui_streamlit] --> B["`manager_fastapi
   (langgraph)`"]
   B --> C[manager_mcp]
+  B --> H[postgres_supabase]
   C --> D["`researcher_a2a
   (adk)`"]
   D --> E[researcher_mcp]
@@ -26,6 +27,7 @@ flowchart LR
 ### docker-compose
 
 ```
+docker-compose build
 docker-compose up
 ```
 
@@ -47,6 +49,6 @@ python3 creator_mcp.py --host 0.0.0.0 --port 8001
 
 [Render](https://dashboard.render.com/project/prj-d1gk24bipnbc73ar1o3g)
 
-[LangSmith](https://smith.langchain.com/o/e872addb-ceec-459d-935e-194aff2fe189/projects/p/07c2696a-9fa5-40a8-926c-de887cfbd75d?timeModel=%7B%22duration%22%3A%227d%22%7D&mode=graph)
+[LangSmith](https://smith.langchain.com/o/e872addb-ceec-459d-935e-194aff2fe189/projects/p/120e2716-d6b9-442f-a518-ef08dadf5b87?timeModel=%7B%22duration%22%3A%227d%22%7D)
 
-[Supabase](https://supabase.com/dashboard/project/loslvkaxzpgxxgsagfuj/storage/buckets/llm)
+[Supabase](https://supabase.com/dashboard/project/loslvkaxzpgxxgsagfuj)

@@ -14,6 +14,7 @@ langchain-openai = "*"
 langchain-community = "*"
 langchain-mcp-adapters = "*"
 langgraph = "*"
+langgraph-checkpoint-postgres = "*"
 ddgs = "*"
 mcp = "*"
 a2a-sdk = "*"
@@ -22,6 +23,7 @@ litellm = "*"
 crewai = {extras = ["tools"], version = "*"}
 crewai-tools = {extras = ["mcp"], version = "*"}
 supabase = "*"
+psycopg = {extras = ["binary"], version = "*"}
 
 [dev-packages]
 

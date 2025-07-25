@@ -3,10 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv, find_dotenv
 from pydantic import BaseModel
 from typing import Optional
-from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import InMemorySaver
-from langchain_mcp_adapters.client import MultiServerMCPClient
 import os
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from psycopg import AsyncConnection
 from tools import online_search, image_generate
 
 _ = load_dotenv(find_dotenv())
@@ -20,13 +21,20 @@ agent = None
 @app.on_event("startup")
 async def startup_event():
     global agent
+
     tools = [online_search, image_generate]
     # client = MultiServerMCPClient({"search": {"url": os.environ['MANAGER_MCP_URL'], "transport": "streamable_http"}})
     # tools = await client.get_tools()
+
+    connection_kwargs = {"autocommit": True, "prepare_threshold": 0, "sslmode": "require", "gssencmode": "disable"}
+    conn = await AsyncConnection.connect(os.environ['SUPABASE_DB_URI'], **connection_kwargs)
+    checkpointer = AsyncPostgresSaver(conn)
+    await checkpointer.setup()
+
     agent = create_react_agent(
         model="gpt-4.1",
         tools=tools,
-        checkpointer=InMemorySaver(),
+        checkpointer=checkpointer,
         prompt="""You are a helpful assistant that can search the web and create/edit images.""",
         # prompt="""
         # You are a world class powerful assistant, managing a group of agents with different capabilities.

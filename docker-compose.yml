@@ -73,7 +73,7 @@ services:
 
   mcp_sleep:
     image: busybox
-    command: ["sleep", "15"]
+    command: ["sleep", "5"]
     depends_on:
       researcher_mcp:
         condition: service_started
@@ -84,9 +84,18 @@ services:
 
   a2a_sleep:
     image: busybox
-    command: ["sleep", "30"]
+    command: ["sleep", "15"]
     depends_on:
       researcher_server:
         condition: service_started
       creator_server:
         condition: service_started
+
+  db:
+    container_name: pg_db
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
