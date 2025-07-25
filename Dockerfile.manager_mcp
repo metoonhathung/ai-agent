@@ -12,7 +12,7 @@ COPY Pipfile Pipfile.lock ./
 
 RUN pipenv install --deploy --system --ignore-pipfile
 
-COPY manager_mcp.py ./
+COPY manager_mcp.py tools.py ./
 
 EXPOSE 8080
 

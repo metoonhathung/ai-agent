@@ -34,10 +34,10 @@ RESEARCHER AGENT
 class ResearcherAgent:
     def __init__(self):
         self.agent = LlmAgent(
-            model=LiteLlm(model="openai/gpt-4o"),
+            model=LiteLlm(model="openai/gpt-4.1"),
             name="researcher_agent",
             description="You are a world class web researcher.",
-            instruction="""Use tool search_online to search the web for information.""",
+            instruction="""Use tool 'search_online' to search the web for information.""",
             tools=[MCPToolset(connection_params=StreamableHTTPConnectionParams(url=os.environ['RESEARCHER_MCP_URL']))],
         )
         self.runner = Runner(
@@ -122,7 +122,7 @@ def get_agent_card(host: str, port: int):
     skill = AgentSkill(
         id='search_online',
         name='Search Online Tool',
-        description='Search DuckDuckGo for a query',
+        description='Search online for a query',
         tags=['search', 'online'],
         examples=['What are the latest news today?'],
     )

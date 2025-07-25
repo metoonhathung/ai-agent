@@ -12,7 +12,7 @@ COPY Pipfile Pipfile.lock ./
 
 RUN pipenv install --deploy --system --ignore-pipfile
 
-COPY web.py ./
+COPY web.py tools.py ./
 
 EXPOSE 8501
 

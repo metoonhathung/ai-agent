@@ -12,7 +12,7 @@ COPY Pipfile Pipfile.lock ./
 
 RUN pipenv install --deploy --system --ignore-pipfile
 
-COPY researcher_mcp.py ./
+COPY researcher_mcp.py tools.py ./
 
 EXPOSE 8000
 

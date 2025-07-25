@@ -16,7 +16,7 @@ from a2a.types import (
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[dict]:
     urls = [os.environ['RESEARCHER_SERVER_URL'], os.environ['CREATOR_SERVER_URL']]
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=300) as client:
         tasks = [A2ACardResolver(client, url).get_agent_card() for url in urls]
         cards = await asyncio.gather(*tasks)
         yield {"cards": cards}
@@ -44,7 +44,7 @@ async def execute_agent(tool_name: str, input: str) -> str:
     ctx = mcp.get_context()
     cards = ctx.request_context.lifespan_context["cards"]
     card = next((card for card in cards if card.name == tool_name), None)
-    async with httpx.AsyncClient(timeout=30) as httpx_client:
+    async with httpx.AsyncClient(timeout=300) as httpx_client:
         client = A2AClient(httpx_client, card, card.url)
         message_id = str(uuid4())
         payload: dict[str, Any] = {
@@ -61,5 +61,4 @@ async def execute_agent(tool_name: str, input: str) -> str:
         return result
 
 if __name__ == "__main__":
-    # mcp.run(transport="stdio")
     mcp.run(transport="streamable-http")

@@ -12,7 +12,7 @@ COPY Pipfile Pipfile.lock ./
 
 RUN pipenv install --deploy --system --ignore-pipfile
 
-COPY manager_server.py ./
+COPY manager_server.py tools.py ./
 
 EXPOSE 80
 

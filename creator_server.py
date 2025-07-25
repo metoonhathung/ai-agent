@@ -31,19 +31,19 @@ class CreatorAgent:
             "url": os.environ['CREATOR_MCP_URL'],
             "transport": "streamable-http"
         }
-        self.model = LLM(model="gpt-4o")
+        self.model = LLM(model="gpt-4.1")
         self.tools = MCPServerAdapter(server_params).tools
         self.agent = Agent(
             role="Creator Agent",
-            goal="Use tool create_image to create an image from a query.",
-            backstory="You are a world class image creator.",
+            goal="Use tool 'generate_image' to create a new image or edit an existing image (image_url provided) from a query.",
+            backstory="You are a world class image creator/editor.",
             tools=self.tools,
             llm=self.model,
         )
 
         self.task = Task(
-            description="Create image about '{user_prompt}'", 
-            agent=self.agent, 
+            description="Create a new image or edit an existing image (image_url provided) about '{user_prompt}'",
+            agent=self.agent,
             expected_output="Image about '{user_prompt}'",
         )
 
@@ -121,15 +121,15 @@ def get_agent_card(host: str, port: int):
     """Returns the Agent Card for the Creator Agent."""
     capabilities = AgentCapabilities(streaming=False, pushNotifications=False)
     skill = AgentSkill(
-        id='create_image',
-        name='Create Image Tool',
-        description='create image from a query',
-        tags=['create', 'image'],
-        examples=['Create an image of a dog.'],
+        id='generate_image',
+        name='Create/Edit Image Tool',
+        description='Create a new image or edit an existing image (image_url provided) from a query.',
+        tags=['create', 'edit', 'image'],
+        examples=['Create an image of a dog.', 'Edit the cat in this image to make it look like a tiger. Image URL: https://example.com/cat.jpg'],
     )
     return AgentCard(
         name='Creator Agent',
-        description='Helper agent for creating images',
+        description='Helper agent that create a new image or edit an existing image (image_url provided) from a query.',
         url=os.environ['CREATOR_SERVER_URL'],
         version='1.0.0',
         defaultInputModes=['text', 'text/plain'],
