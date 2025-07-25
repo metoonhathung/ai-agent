@@ -18,14 +18,20 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 agent = None
 
-@app.on_event("startup")
-async def startup_event():
+async def init_agent(mcp_url: Optional[str] = None):
     global agent
 
     tools = [online_search, image_generate]
-    # client = MultiServerMCPClient({"search": {"url": os.environ['MANAGER_MCP_URL'], "transport": "streamable_http"}})
-    # tools = await client.get_tools()
+    mcp_dict = {}
+    # tools = []
+    # mcp_dict = {"default": {"url": os.environ['MANAGER_MCP_URL'], "transport": "streamable_http"}}
+    if mcp_url:
+        mcp_dict["import"] = {"url": mcp_url, "transport": "streamable_http"}
+    client = MultiServerMCPClient(mcp_dict)
+    mcp_tools = await client.get_tools()
+    tools += mcp_tools
 
+    # connection_kwargs = {"autocommit": True, "prepare_threshold": 0}
     connection_kwargs = {"autocommit": True, "prepare_threshold": 0, "sslmode": "require", "gssencmode": "disable"}
     conn = await AsyncConnection.connect(os.environ['SUPABASE_DB_URI'], **connection_kwargs)
     checkpointer = AsyncPostgresSaver(conn)
@@ -46,6 +52,13 @@ async def startup_event():
 class ChatRequest(BaseModel):
     text: str
     image_url: Optional[str] = None
+
+class MCPRequest(BaseModel):
+    mcp_url: str
+
+@app.on_event("startup")
+async def startup_event():
+    await init_agent()
 
 @app.get("/")
 async def root():
@@ -74,3 +87,8 @@ async def post_chat(room_id: str, payload: ChatRequest):
     output = response["messages"][-1].content
     print(f"Request: {payload.text}, Response: {output}")
     return output
+
+@app.post("/mcp")
+async def add_mcp_tools(payload: MCPRequest):
+    await init_agent(payload.mcp_url)
+    return {"message": "MCP tools added."}

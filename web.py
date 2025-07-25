@@ -28,10 +28,22 @@ def chat():
     content = response.json()
     return content
 
+def mcp():
+    mcp_url = st.session_state["mcp_url"]
+    if not mcp_url: return
+    url = f"{os.environ['MANAGER_SERVER_URL']}/mcp"
+    headers = { "Content-Type": "application/json" }
+    data = { "mcp_url": mcp_url }
+    response = requests.post(url, json=data, headers=headers)
+    content = response.json()
+    return content
+
 def main():
+    st.set_page_config(page_title="AI Agent", page_icon="random")
     st.title("AI Agent")
     with st.sidebar:
         st.text_input("Room ID", key="room_id")
+        st.text_input("MCP URL", key="mcp_url", on_change=mcp)
     if not st.session_state["room_id"]:
         st.info("Enter Room ID")
         st.stop()
