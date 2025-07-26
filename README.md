@@ -2,9 +2,9 @@
 
 [Demo](https://multi-agent-ai.streamlit.app/)
 
-Description: A multi-agent AI chatbot application capable of searching online and creating/editing images.
+Description: A multi-agent AI chatbot application capable of searching online, creating/editing images, and analyze PDFs.
 
-Technologies: Streamlit, FastAPI, Supabase, LangGraph, crewAI, ADK, A2A, MCP
+Technologies: Streamlit, FastAPI, Supabase, LangGraph, crewAI, ADK, A2A, MCP, RAG
 
 ## Architecture
 
