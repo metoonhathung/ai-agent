@@ -24,6 +24,8 @@ crewai = {extras = ["tools"], version = "*"}
 crewai-tools = {extras = ["mcp"], version = "*"}
 supabase = "*"
 psycopg = {extras = ["binary"], version = "*"}
+faiss-cpu = "*"
+pypdf = "*"
 
 [dev-packages]
 
